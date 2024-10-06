@@ -71,6 +71,15 @@ app.get('/api/dashboard', jwtMW, (req, res) => {
     });
 });
 
+//Protected settings route
+app.get('/api/settings', jwtMW, (req, res) => {
+    console.log(req);
+    res.json({
+        success: true,
+        myContent: 'Settings page'
+    });
+});
+
 app.get('/api/prices', jwtMW, (req, res) => {
     console.log(req);
     res.json({
