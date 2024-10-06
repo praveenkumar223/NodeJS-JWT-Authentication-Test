@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.7/axios.min.js" integrity="sha512-DdX/YwF5e41Ok+AI81HI8f5/5UsoxCVT9GKYZRIzpLxb8Twz4ZwPPX+jQMwMhNQ9b5+zDEefc+dcvQoPWGNZ3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+
+    <div class="container-fluid">
+        <h1 class="row">Login</h1>
+        <main>
+            <div class="row">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username">
+            </div>
+
+            <div class="row">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password">
+            </div>
+
+            <div>
+                <button onclick="login()">Login</button>
+                <button onclick="getDashboard()">Get Dashboard</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function login(){
+            const data = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+            };
+            axios.post('/api/login', data)
+                .then(res => {
+                    console.log(res);
+                    document.getElementById('username').value = '';
+                    document.getElementById('password').value = '';
+                    if (res && res.data && res.data.success) {
+                        const token = res.data.token;
+                        localStorage.setItem('jwt', token);
+                        getDashboard();
+                    }
+                });
+        }
+
+        function getDashboard() {
+            const token = localStorage.getItem('jwt');
+            axios.get('/api/dashboard', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }).then(res => {
+                if (res && res.data && res.data.success) {
+                    document.querySelector('h1.row').innerHTML = 'Dashboard';
+                    document.querySelector('main').innerHTML = res.data.myContent;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
