@@ -26,6 +26,7 @@
             <div>
                 <button onclick="login()">Login</button>
                 <button onclick="getDashboard()">Get Dashboard</button>
+                <!-- New Settings Button -->
                 <button onclick="getSettings()">Settings</button>
             </div>
         </main>
@@ -45,6 +46,7 @@
                     if (res && res.data && res.data.success) {
                         const token = res.data.token;
                         localStorage.setItem('jwt', token);
+                        updateUrl('/dashboard');
                         getDashboard();
                     }
                 });
@@ -58,11 +60,13 @@
                 }
             }).then(res => {
                 if (res && res.data && res.data.success) {
+                    updateUrl('/dashboard');
                     document.querySelector('h1.row').innerHTML = 'Dashboard';
                     document.querySelector('main').innerHTML = res.data.myContent;
                 }
             });
         }
+
         function getSettings() {
             const token = localStorage.getItem('jwt');
             axios.get('/api/settings', {
@@ -71,11 +75,45 @@
                 }
             }).then(res => {
                 if (res && res.data && res.data.success) {
+                    updateUrl('/settings');
                     document.querySelector('h1.row').innerHTML = 'Settings';
                     document.querySelector('main').innerHTML = res.data.myContent;
                 }
             });
         }
+
+        function updateUrl(route) {
+            history.pushState(null, '', route);
+        }
+
+        window.addEventListener('popstate', function(e) {
+            // Handle navigation via browser's back and forward buttons
+            if (location.pathname === '/dashboard') {
+                getDashboard();
+            } else if (location.pathname === '/settings') {
+                getSettings();
+            } else {
+                // Reset to login
+                document.querySelector('h1.row').innerHTML = 'Login';
+                document.querySelector('main').innerHTML = `
+                    <div class="row">
+                        <label for="username">Username</label>
+                        <input type="text" name="username" id="username">
+                    </div>
+
+                    <div class="row">
+                        <label for="password">Password</label>
+                        <input type="password" name="password" id="password">
+                    </div>
+
+                    <div>
+                        <button onclick="login()">Login</button>
+                        <button onclick="getDashboard()">Get Dashboard</button>
+                        <button onclick="getSettings()">Settings</button>
+                    </div>
+                `;
+            }
+        });
     </script>
 </body>
 </html>
