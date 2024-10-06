@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.7/axios.min.js" integrity="sha512-DdX/YwF5e41Ok+AI81HI8f5/5UsoxCVT9GKYZRIzpLxb8Twz4ZwPPX+jQMwMhNQ9b5+zDEefc+dcvQoPWGNZ3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
-
     <div class="container-fluid">
         <h1 class="row">Login</h1>
         <main>
@@ -26,7 +25,6 @@
             <div>
                 <button onclick="login()">Login</button>
                 <button onclick="getDashboard()">Get Dashboard</button>
-                <!-- New Settings Button -->
                 <button onclick="getSettings()">Settings</button>
             </div>
         </main>
@@ -40,46 +38,66 @@
             };
             axios.post('/api/login', data)
                 .then(res => {
-                    console.log(res);
+                    console.log('Login response:', res);
                     document.getElementById('username').value = '';
                     document.getElementById('password').value = '';
                     if (res && res.data && res.data.success) {
                         const token = res.data.token;
                         localStorage.setItem('jwt', token);
+                        console.log('Token stored in localStorage');
                         updateUrl('/dashboard');
                         getDashboard();
                     }
+                })
+                .catch(error => {
+                    console.error('Login error:', error);
+                });
+        }
+
+        function handleApiRequest(apiCall) {
+            const token = localStorage.getItem('jwt');
+            console.log('Using token:', token);
+            return apiCall(token)
+                .then(res => {
+                    console.log('API response:', res);
+                    if (res && res.data && res.data.success) {
+                        return res.data;
+                    }
+                    throw new Error('Unexpected response format');
+                })
+                .catch(error => {
+                    console.error('API error:', error);
+                    if (error.response && error.response.status === 401) {
+                        console.log('Token expired or invalid, redirecting to login');
+                        localStorage.removeItem('jwt');
+                        window.location.href = '/';
+                    }
+                    throw error;
                 });
         }
 
         function getDashboard() {
-            const token = localStorage.getItem('jwt');
-            axios.get('/api/dashboard', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            }).then(res => {
-                if (res && res.data && res.data.success) {
-                    updateUrl('/dashboard');
-                    document.querySelector('h1.row').innerHTML = 'Dashboard';
-                    document.querySelector('main').innerHTML = res.data.myContent;
-                }
-            });
+            handleApiRequest(token => 
+                axios.get('/api/dashboard', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ).then(data => {
+                updateUrl('/dashboard');
+                document.querySelector('h1.row').innerHTML = 'Dashboard';
+                document.querySelector('main').innerHTML = data.myContent;
+            }).catch(error => console.error('Error fetching dashboard:', error));
         }
 
         function getSettings() {
-            const token = localStorage.getItem('jwt');
-            axios.get('/api/settings', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            }).then(res => {
-                if (res && res.data && res.data.success) {
-                    updateUrl('/settings');
-                    document.querySelector('h1.row').innerHTML = 'Settings';
-                    document.querySelector('main').innerHTML = res.data.myContent;
-                }
-            });
+            handleApiRequest(token => 
+                axios.get('/api/settings', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ).then(data => {
+                updateUrl('/settings');
+                document.querySelector('h1.row').innerHTML = 'Settings';
+                document.querySelector('main').innerHTML = data.myContent;
+            }).catch(error => console.error('Error fetching settings:', error));
         }
 
         function updateUrl(route) {
@@ -87,13 +105,11 @@
         }
 
         window.addEventListener('popstate', function(e) {
-            // Handle navigation via browser's back and forward buttons
             if (location.pathname === '/dashboard') {
                 getDashboard();
             } else if (location.pathname === '/settings') {
                 getSettings();
             } else {
-                // Reset to login
                 document.querySelector('h1.row').innerHTML = 'Login';
                 document.querySelector('main').innerHTML = `
                     <div class="row">
